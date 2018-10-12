@@ -9,8 +9,7 @@ may end up making a great many SSH calls.
 
 ## Usage
 
-Run it in the directory you want to check, or supply a directory with `-d`. Note:
-`--levels` is a work in progress, do not use it :)
+Run it in the directory you want to check, or supply a directory with `-d`.
 
 The sources to be checked must either be public, or you must have access to them
 via an SSH key. Specifiy private repos with the `--private-repos` option as a
@@ -20,17 +19,16 @@ a million times :)
     Usage: tf_tagfresh.py [options]
 
     Options:
-    -h, --help            show this help message and exit
-    -d DIRECTORY, --directory=DIRECTORY
-                        (Optional) Where to start the check from. Default is
-                        "./"
-    -p PRIVATE_REPOS, --private-repos=PRIVATE_REPOS
-                        Space separated list of private repos
-    -l LEVELS, --levels=LEVELS
-                        FIXME: Do not use; WIP -- (Optional) How many levels
-                        deep to travel down directory trees. Default is to
-                        follow all the turtles
-                        
+      -h, --help            show this help message and exit
+      -d DIRECTORY, --directory=DIRECTORY
+                            (Optional) Where to start the check from. Default is
+                            "./"
+      -p "git.fantastico.com", --private-repos="git.fantastico.com"
+                            (Optional) Space separated list of private repos
+      -l LEVELS, --levels=LEVELS
+                            (Optional) How many levels deep to travel down
+                            directory trees. Default is to follow all the turtles
+
 ## Gitlab CI
 
 One of the most common ways in which you want to use this is in a CI/CD pipeline. 

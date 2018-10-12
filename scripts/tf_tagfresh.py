@@ -8,8 +8,8 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-d", "--directory", dest="directory", help="(Optional) Where to start the check from. Default is \"./\"")
-parser.add_option("-p", "--private-repos", dest="private_repos", help="Space separated list of private repos")
-parser.add_option("-l", "--levels", dest="levels", help="FIXME: Do not use; WIP -- (Optional) How many levels deep to travel down directory trees. Default is to follow all the turtles")
+parser.add_option("-p", "--private-repos", dest="private_repos", help="Space separated list of private repos", metavar="\"git.fantastico.com\"")
+parser.add_option("-l", "--levels", dest="levels", help="(Optional) How many levels deep to travel down directory trees. Default is to follow all the turtles")
 (options, args) = parser.parse_args()
 directory = options.directory if options.directory else "./"
 levels = int(options.levels) if options.levels else 10
@@ -20,11 +20,9 @@ def grep_sources(directory):
     files_sources_dict = {}
 
     for root, dirs, fnames in os.walk(directory):
-        # FIXME: This doesn't work, seems to skip in the wrong place, so ends up
-        #        skipping first level too
-        if root[len(directory) + 1:].count(os.sep) > levels:
-            pass
-        else:
+        this_depth = root[len(directory) + len(os.path.sep):].count(os.path.sep)
+
+        if this_depth < levels:
             for fname in fnames:
                 if fname.endswith(".tf"):
                     this_path = os.path.join(root, fname)
@@ -48,6 +46,8 @@ def grep_sources(directory):
                                 else:
                                     files_sources_dict[this_path].append(m)
                     f.close()
+        else:
+            pass
 
     return files_sources_dict
 
@@ -55,7 +55,8 @@ def check_source(source, this_file):
     if "?ref=" not in source:
         return
 
-    # FIXME: Make ".git?" optional, without entering into the previous capture
+    # FIXME: Make ".git?" optional without entering into the previous capture,
+    #        so we don't have to do the horribleness below with stripped_url
     capture_tags_regx = re.compile("(ssh:\/\/.*|https:\/\/.*)(?:\?)?(?:ref\=)(.*)")
     parsed_source = capture_tags_regx.match(source)
     try:
