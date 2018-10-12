@@ -30,3 +30,26 @@ a million times :)
                         FIXME: Do not use; WIP -- (Optional) How many levels
                         deep to travel down directory trees. Default is to
                         follow all the turtles
+                        
+## Gitlab CI
+
+One of the most common ways in which you want to use this is in a CI/CD pipeline. 
+Here's some sample code for a gitlab CI pipeline:
+
+```
+test_tf_tag_sources:
+  image: "python:2.7.15"
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - echo "StrictHostKeyChecking=no" > ~/.ssh/config
+    - chmod -R 700 ~/.ssh
+  script:
+    - pip install git+git://github.com/afrazkhan/tf_tagfresh
+    - tf_tagfresh.py -p gitlab.example.com
+  allow_failure: true
+```
+
+The above snippet expects a GitLab secret variable called `SSH_KEY` that contains the private key that can access all the repositories referenced.
