@@ -52,4 +52,4 @@ test_tf_tag_sources:
   allow_failure: true
 ```
 
-The above snippet expects a GitLab secret variable called `SSH_KEY` that contains the private key that can access all the repositories referenced.
+The above snippet expects a GitLab secret variable called `SSH_KEY`, that contains a private key able to access all repositories listed in the `--private-repos` flag.
