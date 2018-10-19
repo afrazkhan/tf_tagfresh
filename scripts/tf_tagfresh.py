@@ -15,8 +15,25 @@ directory = options.directory if options.directory else "./"
 levels = int(options.levels) if options.levels else 10
 private_repos = options.private_repos.split() if options.private_repos else []
 
+
+# Rewrite all URLs to HTTPS to avoid need for keys, unless they are in the
+# private_repos list, or a file URL
+def rewrite_source_url(source):
+    source = re.sub(r"(?:git::)(?:ssh://|https://|http://)(?:git\@)*", "", source.group(1))
+
+    protocol = "https://"
+
+    for repo in private_repos:
+        if repo in source:
+            protocol = "ssh://git@"
+    source = protocol + source
+
+    return source
+
+
 def grep_sources(directory):
-    regx = re.compile("\s*source\s*=\s*(?:\"|\')(?:https\:\/\/|git\:\:ssh\:\/\/(?:git\@)?)?(?!\.\.|\/)(.*)(?:\"|\')")
+    source_regx = re.compile("\s*source\s*=\s*(?:\"|\')(?:https\:\/\/|git\:\:ssh\:\/\/(?:git\@)?)?(?!\.\.|\/)(.*)(?:\"|\')")
+    url_regx = re.compile("(?:\w+)?\.(?:\w+)")
     files_sources_dict = {}
 
     for root, dirs, fnames in os.walk(directory):
@@ -31,20 +48,16 @@ def grep_sources(directory):
                         lines = f.readlines()
                         
                         for line in lines:
-                            if regx.match(line):
-                                m = regx.match(line)
-                                m = re.sub(r"(?:git::)(?:ssh://|https://|http://)(?:git\@)*", "", m.group(1))
 
-                                protocol = "https://"
-                                for repo in private_repos:
-                                    if repo in m:
-                                        protocol = "ssh://git@"
-                                m = protocol + m
+                            if source_regx.match(line) and url_regx.search(line):
+                                m = source_regx.match(line)
+
+                                source_url = rewrite_source_url(m)
 
                                 if not this_path in files_sources_dict:
-                                    files_sources_dict[this_path] = [m]
+                                    files_sources_dict[this_path] = [source_url]
                                 else:
-                                    files_sources_dict[this_path].append(m)
+                                    files_sources_dict[this_path].append(source_url)
                     f.close()
         else:
             pass
@@ -53,7 +66,7 @@ def grep_sources(directory):
 
 def check_source(source, this_file):
     if "?ref=" not in source:
-        return
+        return "WARNING: For source " + source + " in file " + this_file + "\nNot using tags" + "\n"
 
     # FIXME: Make ".git?" optional without entering into the previous capture,
     #        so we don't have to do the horribleness below with stripped_url
@@ -85,7 +98,7 @@ def check_files(files_to_check):
     for f, sources in files_to_check.iteritems():
         for s in sources:
             stale_source = check_source(s, f)
-            if stale_source is not None:
+            if stale_source is not None and stale_source is not "skip_non_url":
                 print(stale_source)
                 stale_sources.append(stale_source)
 
