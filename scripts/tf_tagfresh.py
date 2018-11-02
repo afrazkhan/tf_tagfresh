@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import os
 import sys
@@ -10,10 +10,12 @@ parser = OptionParser()
 parser.add_option("-d", "--directory", dest="directory", help="(Optional) Where to start the check from. Default is \"./\"")
 parser.add_option("-p", "--private-repos", dest="private_repos", help="Space separated list of private repos", metavar="\"git.fantastico.com\"")
 parser.add_option("-l", "--levels", dest="levels", help="(Optional) How many levels deep to travel down directory trees. Default is to follow all the turtles")
+parser.add_option("-i", "--ignore", dest="ignore_list", help="(Optional) Space separated list of files to ignore")
 (options, args) = parser.parse_args()
 directory = options.directory if options.directory else "./"
 levels = int(options.levels) if options.levels else 10
 private_repos = options.private_repos.split() if options.private_repos else []
+ignore_list = options.ignore_list.split() if options.ignore_list else []
 
 
 # Rewrite all URLs to HTTPS to avoid need for keys, unless they are in the
@@ -31,6 +33,14 @@ def rewrite_source_url(source):
     return source
 
 
+def file_in_ignore_list(path):
+    for ignored_path in ignore_list:
+        if ignored_path in path:
+            return True
+
+    return False
+
+
 def grep_sources(directory):
     source_regx = re.compile("\s*source\s*=\s*(?:\"|\')(?:https\:\/\/|git\:\:ssh\:\/\/(?:git\@)?)?(?!\.\.|\/)(.*)(?:\"|\')")
     url_regx = re.compile("(?:\w+)?\.(?:\w+)")
@@ -46,12 +56,11 @@ def grep_sources(directory):
 
                     with open(this_path) as f:
                         lines = f.readlines()
-                        
+
                         for line in lines:
 
-                            if source_regx.match(line) and url_regx.search(line):
+                            if source_regx.match(line) and url_regx.search(line) and not file_in_ignore_list(this_path):
                                 m = source_regx.match(line)
-
                                 source_url = rewrite_source_url(m)
 
                                 if not this_path in files_sources_dict:
@@ -92,13 +101,15 @@ def check_source(source, this_file):
     if sorted(remote_tags)[-1] > current_tag:
         return "WARNING: For source " + stripped_url + " in file " + this_file + "\nLatest = " + sorted(remote_tags)[-1] + ", version used = " + current_tag + "\n"
 
+
 def check_files(files_to_check):
     stale_sources = []
 
     for f, sources in files_to_check.iteritems():
         for s in sources:
             stale_source = check_source(s, f)
-            if stale_source is not None and stale_source is not "skip_non_url":
+
+            if stale_source is not None and stale_source is not "skip_url":
                 print(stale_source)
                 stale_sources.append(stale_source)
 

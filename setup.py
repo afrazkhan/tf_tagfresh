@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tf_tagfresh",
-    version="0.0.2",
+    version="0.0.3",
     author="Afraz",
     author_email="afrazkhan@gmail.com",
     description="Check your Terraform sources are fresh",
